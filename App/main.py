@@ -1,15 +1,10 @@
-# TODO on correct answer the feedback text (example: 1/6 is equal to 1/6)
-#    doesn't adjust to screen size and covers up "new question" and "check answer"
-#    buttons
-# TODO add fireworks animation
-# TODO pie chart could be adjusted to fit better to screen
-# TODO optional, back button to menu
-
 #!/usr/local/bin/python3
 from kivy.app import App
 from kivy.lang import Builder
 import os
 from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.dropdown import DropDown
+from kivy.base import runTouchApp
 from kivy.core.window import Window
 from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
@@ -32,6 +27,7 @@ import hashlib
 Window.clearcolor = (1, 1, 1, 1)
 Window.size = (1200, 800)
 
+# sqlite connection
 conn = sqlite3.connect("UserInfo.db")
 cursor = conn.cursor()
 cursor.execute(
@@ -45,12 +41,15 @@ rightSound = SoundLoader.load('Audio/success.ogg')
 wrongSound = SoundLoader.load('Audio/wrong.ogg')
 studentName = ""
 
+# applet 1
+
 
 def FractionEq(self):
     def goBack(self):
         Fl.clear_widgets()
         GameSelector(self)
 
+    # all these update_x are for window resizing
     def update_rect(*args):
         width = Fl.size[0] / 5 * 3
         height = Fl.size[1] / 5 * 3
@@ -80,6 +79,7 @@ def FractionEq(self):
         for x in range(1, slider.value):
             line2.points = [((width/slider.value) * x) + Fl.size[0] / 5, (Fl.height * (13 / 15)),
                             ((width/slider.value) * x) + Fl.size[0] / 5, (Fl.height * (5 / 18))]
+    # draws lines on canvas
 
     def sliderLines():
         with wid3.canvas:
@@ -90,8 +90,6 @@ def FractionEq(self):
                                      (((width/slider.value) * x) + Fl.size[0] / 5), (Fl.height * (5 / 18))],
                              width=4, color=(.23, .6, .2))
 
-        # wid3.bind(pos=update_sliderNum)
-        # wid3.bind(size=update_sliderNum)
         Fl.add_widget(wid3)
 
     def sliderValFunc(instance, val):
@@ -108,6 +106,7 @@ def FractionEq(self):
         Fl.clear_widgets()
         FractionEq(self)
 
+# checks students response
     def answerChecker(self):
         if int(slider.value) % denominator == 0:
             equivNumerator = int(slider.value) / denominator
@@ -129,12 +128,10 @@ def FractionEq(self):
             checkAnswerBtn.background_normal = ('')
             checkAnswerBtn.background_color = (1, .3, .3, .9)
             checkAnswerBtn.text = ("TRY AGAIN")
-            # UPDATE categories SET code = CONCAT(code, '_standard') WHERE id = 1;
             try:
                 sql = "UPDATE login SET incorrect = incorrect || ' "+str(
                     slider.value)+str("/")+str(denominator)+",' WHERE user = '"+studentName+"';"
-                # sql = "UPDATE login SET incorrect = incorrect || '"+str(
-                #   slider.value)+str("/")+str(denominator)+"' WHERE user = "+studentName+"; "
+
                 cursor.execute(sql)
                 conn.commit()
                 print(sql)
@@ -145,12 +142,6 @@ def FractionEq(self):
                 print("Failed to add inc. ans")
 
             wrongResponse = TimedWrongResponse()
-            '''incorrectResp = Label(text='Wrong!',
-                                  color=(0, 0, 0, 1),
-                                  font_size=62,
-                                  pos_hint={"x": .4, 'y': .06},
-                                  size_hint=(.2, .1))
-            Fl.add_widget(incorrectResp)'''
 
     class TimedRightResponse(Widget):
         myCount = 0
@@ -193,6 +184,28 @@ def FractionEq(self):
     wid = Widget()
     wid1 = Widget()
     wid2 = Widget()
+
+# --------Fix me-------------------
+    dropdown = DropDown()
+
+    dropBtn1 = Button(text='level 1', size_hint_y=None, height=44)
+    dropBtn1.bind(on_release=lambda btn: dropdown.select(dropBtn1.text))
+    dropdown.add_widget(dropBtn1)
+    dropBtn2 = Button(text='level 2', size_hint_y=None, height=44)
+    dropBtn2.bind(on_release=lambda btn: dropdown.select(dropBtn2.text))
+    dropdown.add_widget(dropBtn2)
+    dropBtn3 = Button(text='level 3', size_hint_y=None, height=44)
+    dropBtn3.bind(on_release=lambda btn: dropdown.select(dropBtn3.text))
+    dropdown.add_widget(dropBtn3)
+    mainbutton = Button(text='Level Selector', size_hint=(.1, .08),
+                        pos_hint={"x": .85, "y": .79})
+
+    mainbutton.bind(on_release=dropdown.open)
+
+    dropdown.bind(on_select=lambda instance, x: setattr(mainbutton, 'text', x))
+
+
+# --------------------------
 
     logo = Image(
         source='Images/SH_box2BSHSUName_021_horizontalstack_3_29.png',
@@ -293,6 +306,7 @@ def FractionEq(self):
     Fl.add_widget(wid)
     Fl.add_widget(wid1)
     Fl.add_widget(wid2)
+    Fl.add_widget(mainbutton)
 
 
 def PieFraction(self):
@@ -489,6 +503,7 @@ def MainWindow(self):
         Fl.add_widget(passInput)
         Fl.add_widget(submitBtn2)
 
+# when the student enters their name
     def submitFunc(self):
         if str(userInput.text) == "":
             errorMessage = Label(text="Enter a name!",
@@ -500,7 +515,7 @@ def MainWindow(self):
         else:
             try:
                 sql = "INSERT INTO login(user,password, incorrect) VALUES('" + str(
-                    userInput.text) + "',NULL, '_')"
+                    userInput.text) + "',NULL, '.')"
                 cursor.execute(sql)
                 conn.commit()
                 print("User " + str(userInput.text) + " was created!")
